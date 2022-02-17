@@ -87,10 +87,10 @@ public class Database {
         return nickname;
     }
 
-    public static boolean changeUserNickname(String currentNickname, String newNickname) {
+    public static boolean changeUserNick(String currentNick, String newNick) {
         try {
-            changeUserNickStatement.setString(1, newNickname);
-            changeUserNickStatement.setString(2, currentNickname);
+            changeUserNickStatement.setString(1, newNick);
+            changeUserNickStatement.setString(2, currentNick);
             changeUserNickStatement.executeUpdate();
             return true;
         } catch (SQLException e) {

@@ -37,15 +37,13 @@ public class BaseAuthService implements AuthService {
     }
 
     @Override
-    public String getNickByLoginPass(String login, String pass) {
-        for (Entry o : entries) {
-            if (o.login.equals(login) && o.pass.equals(pass)) return o.nick;
-        }
-        return null;
-
+    public String getNickname(String login, String password) {
+        return Database.getUserNickname(login, password);
     }
+
     @Override
     public boolean changeNick(String currentNick, String newNick) {
-        return Database.changeUserNickname(currentNick, newNick);
+        return Database.changeUserNick(currentNick, newNick);
     }
+
 }

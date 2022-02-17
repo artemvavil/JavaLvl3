@@ -4,13 +4,9 @@ public interface AuthService {
 
     void start();
 
-    String getNickByLoginPass(String login, String pass);
+    String getNickname(String login, String password);
+
+    boolean changeNick(String currentNick, String newNick);
 
     void stop();
-
-
-    @Override
-    public boolean changeNick(String currentNick, String newNick) {
-        return false;
-    }
 }
