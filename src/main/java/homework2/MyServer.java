@@ -5,18 +5,22 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MyServer {
     private final int PORT = 8189;
 
     private List<ClientHandler> clients;
     private AuthService authService;
+    private ExecutorService clientsExecutorService;
 
     public AuthService getAuthService() {
         return authService;
     }
 
     public MyServer() {
+        clientsExecutorService = Executors.newCachedThreadPool();
         try (ServerSocket server = new ServerSocket(PORT)) {
             authService = new BaseAuthService();
             authService.start();
@@ -30,10 +34,13 @@ public class MyServer {
         } catch (IOException e) {
             System.out.println("Ошибка в работе сервера");
         } finally {
-            if (authService != null) {
-                authService.stop();
-            }
+            clientsExecutorService.shutdown();
+            Database.disconnect();
+            System.out.println("Server closed");
         }
+    }
+    public ExecutorService getClientsExecutorService() {
+        return clientsExecutorService;
     }
 
     public synchronized void sendMsgToClient(ClientHandler from, String nickTo, String msg) {
