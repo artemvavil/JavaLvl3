@@ -1,15 +1,20 @@
 package homework2;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class ClientHandler {
     private MyServer myServer;
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
+    private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
 
     private String name;
 
@@ -18,12 +23,17 @@ public class ClientHandler {
     }
 
     public ClientHandler(MyServer myServer, Socket socket) {
+        logger.setLevel(Level.ALL);
+        Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+
         try {
             this.myServer = myServer;
             this.socket = socket;
             this.in = new DataInputStream(socket.getInputStream());
             this.out = new DataOutputStream(socket.getOutputStream());
-            this.name = "";
+            this.name =getName();
             new Thread(() -> {
                 try {
                     authentication();
@@ -43,6 +53,7 @@ public class ClientHandler {
         while (true) {
             String str = in.readUTF();
             if (str.startsWith("/auth")) {
+                logger.log(Level.FINE, "Пользователь проходит аутентификацию");
                 String[] parts = str.split("\\s");
                 String nick = myServer.getAuthService().getNickname(parts[1], parts[2]);
                 if (nick != null) {
@@ -58,6 +69,7 @@ public class ClientHandler {
                 } else {
                     sendMsg("Неверные логин/пароль");
                 }
+                logger.log(Level.FINE, "Пользователь не прошел аутентификацию");
             }
 
         }
@@ -68,9 +80,12 @@ public class ClientHandler {
             String str = in.readUTF();
 
             if (str.startsWith("/changenick ")) {
+                logger.log(Level.FINER,"User " + this.name + " is trying to change nickname");
                 String newNick = str.split("\\s", 2)[1];
                 if (newNick.contains(" ")) {
                     sendMsg("Nickname cannot contain spaces");
+                    logger.log(Level.FINER,"User " + this.name +
+                            "'s new nickname contains invalid characters");
                     continue;
                 }
                 if (myServer.getAuthService().changeNick (this.name, newNick)) {
@@ -80,48 +95,9 @@ public class ClientHandler {
                     myServer.broadcastClientsList();
                 } else {
                     sendMsg("Nickname is already taken");
+                    logger.log(Level.FINER,"User " + this.name +
+                            "'s new nickname is already taken");
                 }
-            }
-        }
-    }
-
-    private void SaveHistory () throws IOException {
-        try {
-            File history = new File("history.txt");
-            if (!history.exists()) {
-                System.out.println("Создание файла истории");
-                history.createNewFile();
-            }
-            PrintWriter fileWriter = new PrintWriter(new FileWriter(history, false));
-
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            bufferedWriter.write(textArea.getText());
-            bufferedWriter.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void loadHistory () throws IOException {
-        int posHistory = 100;
-        File history = new File("history.txt");
-        List<String> historyList = new ArrayList<>();
-        FileInputStream in = new FileInputStream(history);
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(in));
-
-        String temp;
-        while ((temp = bufferedReader.readLine()) != null) {
-            historyList.add(temp);
-        }
-
-        if (historyList.size() > posHistory) {
-            for (int i = historyList.size() - posHistory; i <= (historyList.size() - 1); i++) {
-                textArea.appendText(historyList.get(i) + "\n");
-            }
-        } else {
-            for (int i = 0; i < posHistory; i++) {
-                System.out.println(historyList.get(i));
             }
         }
     }
@@ -141,7 +117,7 @@ public class ClientHandler {
         try {
             out.writeUTF(msg);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, e.getMessage(), e);
         }
     }
 
@@ -151,17 +127,17 @@ public class ClientHandler {
         try {
             in.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         try {
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         try {
             socket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
     }
 }
